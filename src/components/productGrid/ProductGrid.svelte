@@ -1,12 +1,11 @@
 <script>
-    import { onMount } from "svelte";
-    
+    import { onMount } from "svelte";    
     import ProductTile from './ProductTile.svelte';
 
     let promise = Promise.resolve([]);
 
     async function getProducts() {
-        return await fetch("/api/getProducts")
+        return await fetch("/api/stripe/getProducts")
         .then(response => response.json())
 		.catch(error => {
 			console.log(error);
@@ -49,10 +48,10 @@
         <p>Loading...</p> 
     {:then products}
         {#each products.products as product}
-            <ProductTile props={product}/>
+            <ProductTile {...product}/>
         {/each}
     {:catch error}
-        <p>error</p>
+        <p>Error loading products...</p>
     {/await}
 
 </div>

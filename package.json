@@ -23,6 +23,7 @@
     "autoprefixer": "^9",
     "postcss": "^7",
     "sirv-cli": "^1.0.0",
+    "stripe": "^8.167.0",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat"
   }
 }
