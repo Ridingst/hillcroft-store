@@ -1,23 +1,14 @@
 <script>
 	import Welcome from './components/welcome/Welcome.svelte';
+	import ProductGrid from './components/productGrid/ProductGrid.svelte';
+
+	$: document.body.classList.add("flex", "flex-col", "w-screen", "min-h-screen", "p-10", "bg-gray-100", "text-gray-800");
 </script>
 
-<main>
-	<Welcome/>
-	<p>Visit the <a href="https://svelte.dev/tutorial">Svelte tutorial</a> to learn how to build Svelte apps.</p>
-</main>
+<ProductGrid/>
 
-<style>
-	main {
-		text-align: center;
-		padding: 1em;
-		max-width: 240px;
-		margin: 0 auto;
-	}
-
-	@media (min-width: 640px) {
-		main {
-			max-width: none;
-		}
-	}
+<style global lang="postcss">
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
 </style>
