@@ -5,7 +5,9 @@ module.exports = (req, res) => {
     console.debug("/getProducts")
 
     async function getProductsFromStripe(){
-        return await stripe.products.list();
+        return await stripe.products.list({
+            active: true
+        });
     }
 
     async function getProductPrices(products){
