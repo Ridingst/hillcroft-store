@@ -5,7 +5,12 @@
 
 
 	$: document.body.classList.add("flex", "flex-col", "w-screen", "min-h-screen", "p-10", "bg-gray-100", "text-gray-800");
+
 </script>
+
+<svelte:head>
+	  <title>Hillcroft Lacrosse Club Store</title>
+</svelte:head>
 
 <style global lang="postcss">
   @tailwind base;
