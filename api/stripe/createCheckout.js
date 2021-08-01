@@ -14,13 +14,14 @@ module.exports = (req, res) => {
         async function createSession(productId){
             return await stripe.checkout.sessions.create({
                 mode: (req.body.frequency === 'month') ? 'subscription' : 'payment',
+                customer_email: req.body.email,
                 payment_method_types: ['card'],
                 line_items: [
-                {
-                    price: productId,
-                    // For metered billing, do not pass quantity
-                    quantity: 1,
-                },
+                    {
+                        price: productId,
+                        // For metered billing, do not pass quantity
+                        quantity: 1,
+                    },
                 ],
                 // {CHECKOUT_SESSION_ID} is a string literal; do not change it!
                 // the actual Session ID is returned in the query parameter when your customer
