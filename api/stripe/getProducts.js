@@ -18,7 +18,7 @@ module.exports = (req, res) => {
                     product.price_id = x.id,
                     product.price_metadata = x.metadata,
                     product.price_nickname = x.nickname,
-                    product.frequency = x.type === 'recurring' ? x.recurring.interval : x.type,
+                    product.frequency = x.type === 'recurring' ? x.recurring.interval + "|" + x.recurring.interval_count : x.type,
                     product.price = x.unit_amount
                 ))
                 return product
