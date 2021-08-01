@@ -38,12 +38,12 @@
         return data.json()
       }
     })
-    .then((resp)=> {
-      window.location.replace(resp.sessionUrl)
-    })
     .catch(error => {
       // surface an error message to the user
       showError(error.message);
+    })
+    .then((resp)=> {
+      window.location.replace(resp.sessionUrl)
     });
   }
 

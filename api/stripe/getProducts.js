@@ -13,13 +13,16 @@ module.exports = (req, res) => {
     async function getProductPrices(products){
         const promises = products.map(async product => {
             priceData = await stripe.prices.list({product: product.id, active: true})
-            prices = priceData.data.map(x => (
-                product.price_id = x.id,
-                product.price_metadata = x.metadata,
-                product.price_nickname = x.nickname,
-                product.frequency = x.type === 'recurring' ? x.recurring.interval : x.type,
-                product.price = x.unit_amount
-            ))
+            if(priceData.data.length === 0){
+                return 
+            } else {
+                prices = priceData.data.map(x => (
+                    product.price_id = x.id,
+                    product.price_metadata = x.metadata,
+                    product.price_nickname = x.nickname,
+                    product.frequency = x.type === 'recurring' ? x.recurring.interval : x.type,
+                    product.price = x.unit_amount
+                ))
             return product
         })
 
