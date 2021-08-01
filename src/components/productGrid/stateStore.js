@@ -30,8 +30,12 @@ export function hideEmail(){
 Helper functions to display the error screen
 */
 export function showError(errMsg="We've had a problem somewhere."){
-    hideEmail();
-    hideSuccess();
+    price_id.set("");
+    frequency.set("");
+
+    isEmailOpen.set(false)
+    isSuccessOpen.set(false);
+
     errorMessage.set(errMsg)
     isErrorOpen.set(true);
 }
