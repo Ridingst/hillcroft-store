@@ -1,30 +1,26 @@
 <script>
-	export let name;
+  import Header from './components/Header.svelte';
+  import Footer from './components/Footer.svelte';
+	import ProductGrid from './components/productGrid/ProductGrid.svelte';
+
+
+	$: document.body.classList.add("flex", "flex-col", "w-screen", "min-h-screen", "p-10", "bg-gray-100", "text-gray-800");
+
 </script>
 
-<main>
-	<h1>Hello {name}!</h1>
-	<p>Visit the <a href="https://svelte.dev/tutorial">Svelte tutorial</a> to learn how to build Svelte apps.</p>
-</main>
+<svelte:head>
+	  <title>Hillcroft Lacrosse Club Store</title>
+</svelte:head>
 
-<style>
-	main {
-		text-align: center;
-		padding: 1em;
-		max-width: 240px;
-		margin: 0 auto;
-	}
+<style global lang="postcss">
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
 
-	h1 {
-		color: #ff3e00;
-		text-transform: uppercase;
-		font-size: 4em;
-		font-weight: 100;
-	}
-
-	@media (min-width: 640px) {
-		main {
-			max-width: none;
-		}
-	}
+  a {color: #fbbf24;}         /* Unvisited link  */
+  a:visited {color:#fbbf24;} /* Visited link    */
 </style>
+
+<Header />
+<ProductGrid/>
+<Footer />

@@ -4,6 +4,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import livereload from 'rollup-plugin-livereload';
 import { terser } from 'rollup-plugin-terser';
 import css from 'rollup-plugin-css-only';
+import sveltePreprocess from "svelte-preprocess";
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -38,6 +39,17 @@ export default {
 	},
 	plugins: [
 		svelte({
+			// adding this for tailwind https://css-tricks.com/how-to-use-tailwind-on-a-svelte-site/
+			preprocess: sveltePreprocess({
+				sourceMap: !production,
+				postcss: {
+				  plugins: [
+					 require("tailwindcss"), 
+					 require("autoprefixer"),
+				  ],
+				},
+			}),
+
 			compilerOptions: {
 				// enable run-time checks when not in production
 				dev: !production
