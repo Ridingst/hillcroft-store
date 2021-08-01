@@ -1,6 +1,7 @@
 <script>
     import { onMount } from "svelte";    
     import ProductTile from './ProductTile.svelte';
+    import EmailModal from './emailModal.svelte'
 
     let promise = Promise.resolve([]);
 
@@ -18,6 +19,8 @@
     });
 
 </script>
+
+<EmailModal/>
 
 <section>
     <!-- Product Grid-->

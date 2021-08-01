@@ -40,7 +40,7 @@ module.exports = (req, res) => {
     })
     .then((data) =>{
         res.send({
-            status: 'ok',
+            status: 'Ok',
             products: data
         })
     })
