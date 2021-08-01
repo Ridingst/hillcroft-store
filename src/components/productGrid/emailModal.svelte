@@ -66,12 +66,12 @@
 
 </script>
 
-<div wire:loading class="{emailOpen ? '' : 'hidden'} fixed top-0 left-0 right-0 bottom-0 w-full h-screen overflow-hidden flex flex-col items-center justify-center">
+<div wire:loading class="{emailOpen ? '' : 'hidden'} fixed top-0 left-0 right-0 bottom-0 w-full h-screen overflow-hidden flex flex-col items-center justify-center p-4">
 
-  <div class="fixed top-0 left-0 right-0 bottom-0 w-full h-full bg-gray-700 opacity-50 z-10"></div>
+  <div class="fixed top-0 left-0 right-0 bottom-0 w-full h-full bg-gray-700 opacity-75 z-10"></div>
   
-  <div class="bg-gray-100 flex opacity-100 flex-col justify-center sm:py-8 rounded-lg z-20">
-    <div class="px-10 py-0 xs:p-0 mx-auto md:w-full md:max-w-md">
+  <div class="bg-gray-100 flex opacity-100 flex-col justify-center sm:p-8 mx-4 my-8 rounded-lg z-20 max-h-full">
+    <div class="px-10 py-10 mx-auto md:w-full md:max-w-md">
       <h1 class="text-lg text-center font-bold">HILLCROFT LACROSSE CLUB STORE</h1>
       <img src="/images/hillcroft_lacrosse_club_logo.png" alt="Hillcroft Lacrosse Club Logo" class="object-none object-center w-auto mx-auto py-5"/>
       <div class="bg-white shadow w-full rounded-lg divide-y divide-gray-200">
