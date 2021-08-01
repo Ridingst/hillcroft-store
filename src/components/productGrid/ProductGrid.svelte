@@ -1,7 +1,9 @@
 <script>
     import { onMount } from "svelte";    
     import ProductTile from './ProductTile.svelte';
-    import EmailModal from './emailModal.svelte'
+    import EmailModal from './emailModal.svelte';
+    import ErrorModal from './errorModal.svelte';
+    import SuccessModal from './successModal.svelte';
 
     let promise = Promise.resolve([]);
 
@@ -21,6 +23,8 @@
 </script>
 
 <EmailModal/>
+<ErrorModal/>
+<SuccessModal/>
 
 <section>
     <!-- Product Grid-->

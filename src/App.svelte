@@ -1,6 +1,4 @@
 <script>
-	import Welcome from './components/welcome/Welcome.svelte';
-  import Navbar from './components/Navbar.svelte'
   import Header from './components/Header.svelte';
   import Footer from './components/Footer.svelte';
 	import ProductGrid from './components/productGrid/ProductGrid.svelte';

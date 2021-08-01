@@ -1,12 +1,12 @@
 <script>
 
-  import { isEmailOpen, hideEmail } from './stateStore.js';
+  import { isEmailOpen, hideEmail, price_id, frequency, showError } from './stateStore.js';
   import {setName, setEmail } from './customerStore';
-  let emailOpen;
 
-  isEmailOpen.subscribe((value)=>{
-    emailOpen = value;
-  });
+  let emailOpen, price, freq;
+  price_id.subscribe((val) => { price = val })
+  frequency.subscribe((val) => { freq = val })
+  isEmailOpen.subscribe((value)=>{ emailOpen = value });
 
   let name, email, isValid = true, errorMessage = ""; 
 
@@ -17,27 +17,38 @@
 
   async function generateStripeSession() {
     // add loading display for user
-    return await fetch("/api/stripe/createCheckout?product="+price_id+'&frequency='+frequency)
-      .then((data) => {
-        if(data.status !== 200) {
-          throw new Error('Error creating stripe session. Please try again')
-        } else {
-          return data.json()
-        }
+    return await fetch("/api/stripe/createCheckout", {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        product: price,
+        frequency: freq,
+        name: name,
+        email: email
       })
-      .then((resp)=> {
-        window.location.replace(resp.sessionUrl)
-      })
-      .catch(error => {
-        // surface an error message to the user
-        console.log(error);
-        alert(error.msg)
-      });
+    })
+    .then((data) => {
+      if(data.status !== 200) {
+        // I think this error should bubble up and get caught by the catch statement...should be tested
+        throw new Error('Error creating stripe session. Please try again')
+      } else {
+        return data.json()
+      }
+    })
+    .then((resp)=> {
+      window.location.replace(resp.sessionUrl)
+    })
+    .catch(error => {
+      // surface an error message to the user
+      showError(error.message);
+    });
   }
 
 
   function submitForm(){
-    console.log(name)
     updateCustomerData(name, email)
     .then(()=>{
       isValid = true;
@@ -59,9 +70,9 @@
 
   <div class="fixed top-0 left-0 right-0 bottom-0 w-full h-full bg-gray-700 opacity-50 z-10"></div>
   
-  <div class="bg-gray-100 flex opacity-100 flex-col justify-center sm:py-12 rounded-lg z-20">
+  <div class="bg-gray-100 flex opacity-100 flex-col justify-center sm:py-8 rounded-lg z-20">
     <div class="px-10 py-0 xs:p-0 mx-auto md:w-full md:max-w-md">
-      <h1 class="text-lg text-center font-bold"> HILLCROFT LACROSSE CLUB STORE</h1>
+      <h1 class="text-lg text-center font-bold">HILLCROFT LACROSSE CLUB STORE</h1>
       <img src="/images/hillcroft_lacrosse_club_logo.png" alt="Hillcroft Lacrosse Club Logo" class="object-none object-center w-auto mx-auto py-5"/>
       <div class="bg-white shadow w-full rounded-lg divide-y divide-gray-200">
         
@@ -84,7 +95,7 @@
       <div class="py-5">
         <div class="grid grid-cols-2 gap-1">
           <div class="text-center sm:text-left whitespace-nowrap">
-            <button on:click={hideEmail} class="transition duration-200 mx-5 px-5 py-4 cursor-pointer font-normal text-sm rounded-lg text-gray-500 hover:bg-gray-200 focus:outline-none focus:bg-gray-300 focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 ring-inset">
+            <button on:click={hideEmail} class="transition duration-200 px-5 py-4 cursor-pointer font-normal text-sm rounded-lg text-gray-500 hover:bg-gray-200 focus:outline-none focus:bg-gray-300 focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 ring-inset">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"

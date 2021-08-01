@@ -2,7 +2,7 @@ const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 module.exports = (req, res) => {
-    console.log()
+    console.debug("/getProducts")
 
     async function getProductsFromStripe(){
         return await stripe.products.list();

@@ -2,16 +2,18 @@ const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 module.exports = (req, res) => {
+    console.debug("/createCheckout")
+    const { body } = req;
 
-    if(!('product' in req.query || 'frequency' in req.query || req.query.product === '' )){
-        console.error(req.query)
+    if(!('product' in req.body) || !('frequency' in req.body) || req.body.product === '' || req.body.frequency === '' || !('name' in req.body) || !('email' in req.body) || req.body.name === '' || req.body.email === ''){
+        console.error(req.body)
         res.status(400)
         res.send({status: "Error", message: "Invalid request"})
     } else {
-        console.log('Valid request')
+        console.debug('Valid request')
         async function createSession(productId){
             return await stripe.checkout.sessions.create({
-                mode: (frequency === 'month') ? 'subscription' : 'payment'
+                mode: (req.body.frequency === 'month') ? 'subscription' : 'payment',
                 payment_method_types: ['card'],
                 line_items: [
                 {
@@ -28,7 +30,7 @@ module.exports = (req, res) => {
             });
         }
 
-        createSession(req.query.product)
+        createSession(req.body.product)
         .then((session) => {
             console.log('sending session url: ' + session.url)
             res.send({
@@ -36,6 +38,7 @@ module.exports = (req, res) => {
                 sessionUrl: session.url
             })
         }).catch((err) => {
+            console.error("Stripe Error: " + err.message)
             res.status(400)
             res.send({
                 status: 'Error',
