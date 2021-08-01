@@ -42,6 +42,10 @@ module.exports = (req, res) => {
     .then(data => {
         return getProductPrices(data)
     })
+    .then(data => {
+        // This filters any products that are null or don't have an active price
+        return data.filter((el) => {return (el != null && el.price_id != null)})
+    })
     .then((data) =>{
         res.send({
             status: 'Ok',
