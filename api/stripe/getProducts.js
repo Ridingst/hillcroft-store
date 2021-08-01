@@ -23,7 +23,8 @@ module.exports = (req, res) => {
                     product.frequency = x.type === 'recurring' ? x.recurring.interval : x.type,
                     product.price = x.unit_amount
                 ))
-            return product
+                return product
+            }
         })
 
         return await Promise.all(promises)
