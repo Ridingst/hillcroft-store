@@ -12,7 +12,7 @@ module.exports = (req, res) => {
 
     async function getProductPrices(products){
         const promises = products.map(async product => {
-            priceData = await stripe.prices.list({product: product.id})
+            priceData = await stripe.prices.list({product: product.id, active: true})
             prices = priceData.data.map(x => (
                 product.price_id = x.id,
                 product.price_metadata = x.metadata,
