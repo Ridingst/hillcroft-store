@@ -20,7 +20,11 @@
     "vercel": "^23.0.1"
   },
   "dependencies": {
+    "@hubspot/api-client": "^4.1.0",
     "autoprefixer": "^9",
+    "aws-sdk": "^2.958.0",
+    "micro": "^9.3.4",
+    "node-fetch": "^2.6.1",
     "postcss": "^7",
     "sirv-cli": "^1.0.0",
     "stripe": "^8.167.0",

@@ -4,7 +4,7 @@
 	import ProductGrid from './components/productGrid/ProductGrid.svelte';
 
 
-	$: document.body.classList.add("flex", "flex-col", "w-screen", "min-h-screen", "p-10", "bg-gray-100", "text-gray-800");
+	$: document.body.classList.add("flex", "flex-col", "w-screen", "min-h-screen", "lg:p-10", "bg-gray-100", "text-gray-800");
 
 </script>
 

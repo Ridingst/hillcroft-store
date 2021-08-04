@@ -8,7 +8,7 @@
     let promise = Promise.resolve([]);
 
     async function getProducts() {
-        return await fetch("/api/stripe/getProducts")
+        return await fetch("/api/getProducts")
         .then(response => response.json())
 		.catch(error => {
 			console.log(error);
