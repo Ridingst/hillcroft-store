@@ -1,65 +1,76 @@
 <script>
 
   import { isEmailOpen, hideEmail, price_id, frequency, showError } from './stateStore.js';
-  import {setName, setEmail } from './customerStore';
+  import {setName, setEmail, setPhone } from './customerStore';
 
   let emailOpen, price, freq;
   price_id.subscribe((val) => { price = val })
   frequency.subscribe((val) => { freq = val })
   isEmailOpen.subscribe((value)=>{ emailOpen = value });
 
-  let name, email, isValid = true, errorMessage = ""; 
+  let name, email, phone, isValid = true, isLoading = false, errorMessage = ""; 
 
-  function updateCustomerData(name, email){
-    let promises = [ setName(name), setEmail(email) ]
+  function updateCustomerData(name, email, phone){
+    let promises = [ setName(name), setEmail(email), setPhone(phone) ]
     return Promise.all(promises)
   }
 
   async function generateStripeSession() {
     // add loading display for user
-    return await fetch("/api/stripe/createCheckout", {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        product: price,
-        frequency: freq,
-        name: name,
-        email: email
+    return new Promise((resolve, reject) => {
+      fetch("/api/createCheckout", {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          product: price,
+          frequency: freq,
+          firstname: name.split(" ")[0],
+          lastname: name.split(" ")[name.split(" ").length-1],
+          email: email,
+          phone: phone
+        })
+      })
+      .then((data) => {
+        if(data.status !== 200) {
+          // I think this error should bubble up and get caught by the catch statement...should be tested
+          reject('Error creating stripe session. Please try again')
+        } else {
+          resolve(data.json())
+        }
+      })
+      .catch(error => {
+        // surface an error message to the user
+        reject(error.message);
       })
     })
-    .then((data) => {
-      if(data.status !== 200) {
-        // I think this error should bubble up and get caught by the catch statement...should be tested
-        throw new Error('Error creating stripe session. Please try again')
-      } else {
-        return data.json()
-      }
-    })
-    .catch(error => {
-      // surface an error message to the user
-      showError(error.message);
-    })
-    .then((resp)=> {
-      window.location.replace(resp.sessionUrl)
-    });
   }
 
-
   function submitForm(){
-    updateCustomerData(name, email)
+    updateCustomerData(name, email, phone)
+    .then(() => {
+      isLoading = true;
+    })
     .then(()=>{
       isValid = true;
       errorMessage = "";
     })
     .then(() =>{
-      generateStripeSession()
+      return generateStripeSession()
+    })
+    .then((resp)=> {
+      console.log(resp)
+      window.location.replace(resp.sessionUrl)
     })
     .catch((err) => {
+      console.error(err)
       isValid = false
       errorMessage = err.message
+    })
+    .finally(()=>{
+      isLoading = false;
     })
   }
 
@@ -81,14 +92,22 @@
           <input id="name" bind:value={name} type="text" class="border rounded-lg px-3 py-2 mt-1 mb-5 text-sm w-full" />
           <label class="font-semibold text-sm text-gray-600 pb-1 block" for='email'>Email</label>
           <input id="email" bind:value={email} type="text" class="border rounded-lg px-3 py-2 mt-1 mb-5 text-sm w-full"/>
+          <label class="font-semibold text-sm text-gray-600 pb-1 block" for='phone'>Mobile Number</label>
+          <input id="phone" bind:value={phone} type="text" class="border rounded-lg px-3 py-2 mt-1 mb-5 text-sm w-full"/>
           <span class:hidden="{isValid}" class="flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1 m-2">{errorMessage}
           </span>
 
           <button on:click={submitForm} type="button" class="transition duration-200 bg-blue-500 hover:bg-blue-600 focus:bg-blue-700 focus:shadow-sm focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 text-white w-full py-2.5 rounded-lg text-sm shadow-sm hover:shadow-md font-semibold text-center inline-block">
-            <span class="inline-block mr-2">Payment</span>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4 inline-block" >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
+            <span class="inline-block mr-2">Payment
+              <svg class:hidden="{isLoading}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4 inline-block" >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+              
+              <svg class:hidden="{!isLoading}" class="animate-spin h-5 w-5 mr-3 inline-block" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+          </span>
           </button>
         </div>
       </div>
