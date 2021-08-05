@@ -1,7 +1,7 @@
 const hubspot = require('@hubspot/api-client')
 const hubspotClient = new hubspot.Client()
 
-import { storeToken } from '../helpers/tokenHelpers.js';
+import { storeToken } from '../helpers/tokenManagement.js';
 
 module.exports = (req, res) => {
 
@@ -11,11 +11,11 @@ module.exports = (req, res) => {
         hubspotClient.oauth.defaultApi.createToken(
             'authorization_code',
             req.query.code,
-            (process.env.VERCEL_URL.split(":")[0] == 'localhost' ? 'http://' : 'https://') + process.env.VERCEL_URL + '/api/hubspot/v2/auth/authCallback',
+            process.env.VERCEL_ENV_URL + '/api/hubspot/v2/auth/authCallback',
             process.env.HUBSPOT_CLIENT_ID,
             process.env.HUBSPOT_CLIENT_SECRET)
         // We have a successful auth token. We now need to persist it so other serverless functions can access it.
-        .then((results) => storeToken(results.body))
+        .then((results) => storeToken(results.response.body))
         .then((data) => {res.send({
             status: "Ok",
             data: data
