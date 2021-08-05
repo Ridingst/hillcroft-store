@@ -28,9 +28,10 @@ export async function retrieveValidToken(){
             } else {
                 console.debug("Refreshing Hubspot token")
                 console.debug(token)
-                //throw new Error("stop")
                 refreshToken(token)
-                .then(token => {return token.response.body })
+                .then(token => {
+                    return token.response.body 
+                })
                 .then(token => storeToken(token))
                 .then(token => resolve(token))
                 .catch(err => reject(err))
@@ -53,7 +54,7 @@ function findLatestToken(){
                 Bucket: process.env.S3_BUCKET,
                 Marker: marker,
                 Delimiter: '/',
-                Prefix: 'token_',
+                Prefix: 'token_' + process.env.VERCEL_ENV,
             }).promise()
         }
 
@@ -99,28 +100,40 @@ async function validateToken(token){
 
 function refreshToken(token){
     // First we get the last token we received
+    console.debug('refresh token')
+    console.debug(token.refresh_token)
+
     return new Promise((resolve, reject) => {
-        console.debug(token)
         hubspotClient.oauth.defaultApi.createToken(
             'refresh_token', undefined, undefined,
             process.env.HUBSPOT_CLIENT_ID,
             process.env.HUBSPOT_CLIENT_SECRET,
-            token.refreshToken
+            token.refresh_token
         )
         .then(resolve)
-        .catch(err=>reject(err))
+        .catch(err=>{
+            console.error('Error refreshing hubspot token')
+            console.error(err);
+            reject(err)})
     })
 }
 
 export async function storeToken(token){
     // We set this for 30 mins to make sure we don't have in-flight requests on expiry
+    let expiresAt = Date.now() + (token.expires_in * 1000) - (1800 * 1000);
+    console.debug((token.expires_in * 1000))
+    
     let newToken = token;
-    newToken.expiresAt = Date.now() + (token.expires_in * 1000) - (1800 * 1000);
+    newToken.expiresAt = expiresAt;
+    
+    
+    console.debug('newToken');
+    console.debug(newToken)
     const s3 = getAWSClient()
 
     return s3.upload({
         Bucket: process.env.S3_BUCKET,
         Body: JSON.stringify(newToken),
-        Key: 'token_' + Date.now()
+        Key: 'token_' + process.env.VERCEL_ENV + '_' + Date.now()
     }).promise();
 }
