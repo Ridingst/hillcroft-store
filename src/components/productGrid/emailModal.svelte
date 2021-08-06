@@ -89,11 +89,11 @@
         
         <div class="px-5 py-7">
           <label class="font-semibold text-sm text-gray-600 pb-1 block" for='name'>Full Name</label>
-          <input id="name" bind:value={name} type="text" class="border rounded-lg px-3 py-2 mt-1 mb-5 text-sm w-full" />
+          <input id="name" bind:value={name} required autocomplete="name" type="text" class="border rounded-lg px-3 py-2 mt-1 mb-5 text-sm w-full" />
           <label class="font-semibold text-sm text-gray-600 pb-1 block" for='email'>Email</label>
-          <input id="email" bind:value={email} type="text" class="border rounded-lg px-3 py-2 mt-1 mb-5 text-sm w-full"/>
+          <input id="email" bind:value={email} required autocomplete="email" type="text" class="border rounded-lg px-3 py-2 mt-1 mb-5 text-sm w-full"/>
           <label class="font-semibold text-sm text-gray-600 pb-1 block" for='phone'>Mobile Number</label>
-          <input id="phone" bind:value={phone} type="text" class="border rounded-lg px-3 py-2 mt-1 mb-5 text-sm w-full"/>
+          <input id="phone" bind:value={phone} required autocomplete="tel" type="text" class="border rounded-lg px-3 py-2 mt-1 mb-5 text-sm w-full"/>
           <span class:hidden="{isValid}" class="flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1 m-2">{errorMessage}
           </span>
 
