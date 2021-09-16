@@ -9,7 +9,7 @@ export function setName(value){
         if(value == undefined || value == null || value == '' || !value.includes(" ")){
             reject(Error('Please enter your full name'))
         } else {
-            newName = [value.split(" ")[0], value.split(" ").slice(1).join(" ")];
+            let newName = [value.split(" ")[0], value.split(" ").slice(1).join(" ")];
             Name.set(newName)
             resolve(newName)
         }
