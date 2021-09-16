@@ -27,19 +27,13 @@ module.exports = (req, res) => {
     res.status(400)
     res.send({ status: "Error", message: "Invalid request" })
   } else {
-    getHubspotClient()
-    .then(hubspotClient => {
-      hubspot = hubspotClient
-    })
-    .then(() => {
-      return getOrCreateStripeUser(req.body)
-    })
+    getOrCreateStripeUser(req.body)
     .then(stripeUser => {
       customerObj.stripeid = stripeUser.id;
       return customerObj
     })
     .then(customer => {
-      return updateOrCreateHubspotUser(hubspot, customer)
+      return updateOrCreateHubspotUser(customer)
     })
     .then(hubspotUser => {
       customerObj.hubspotid = hubspotUser.response.body.id;
