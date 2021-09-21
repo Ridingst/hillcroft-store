@@ -17,6 +17,7 @@
             </svg>
             </a>
         </span>
+        <p class="lg:mt-8 lg:mb-8 mt-4 mb-4 text-xs font-semibold tracking-widest text-black uppercase title-font text-center">If you'reinterested in joining Hillcroft but are currently in finance constraints and can't afford out membership, please email us at <a href="mailto:info@hillcroftlacrosse.com">info@HillcroftLacrosse.com</a> for a private discussion.</p>
         </div>
     </div>
 </section>
