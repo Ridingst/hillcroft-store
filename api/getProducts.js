@@ -6,7 +6,8 @@ module.exports = (req, res) => {
 
     async function getProductsFromStripe(){
         return await stripe.products.list({
-            active: true
+            active: true,
+            limit: 100,
         });
     }
 
