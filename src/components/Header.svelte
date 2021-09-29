@@ -17,7 +17,7 @@
             </svg>
             </a>
         </span>
-        <p class="lg:mt-8 lg:mb-8 mt-4 mb-4 text-xs font-semibold tracking-widest text-black uppercase title-font text-center">If you are interested in joining Hillcroft but are currently in financial constraints and can't afford our membership, please email us at <a href="mailto:info@hillcroftlacrosse.com">info@HillcroftLacrosse.com</a> for a private discussion.</p>
+        <p class="lg:mt-8 lg:mb-8 mt-4 mb-4 text-xs font-semibold tracking-widest text-black uppercase title-font text-center">At Hillcroft we do not believe that anyone's financial or employment situation should be a barrier to playing and enjoying lacrosse. If you would like to have a private conversation, please either speak to one of the committee members or email <a href="mailto:info@hillcroftlacrosse.com">info@HillcroftLacrosse.com</a> so we can discuss what works best for you.</p>
         </div>
     </div>
 </section>
