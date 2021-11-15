@@ -32,7 +32,10 @@ export async function retrieveValidToken(){
                 .then(token => {
                     return token.response.body 
                 })
-                .then(token => storeToken(token))
+                .then(token => {
+                    storeToken(token)
+                    return token
+                })
                 .then(token => resolve(token))
                 .catch(err => reject(err))
             }
