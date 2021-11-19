@@ -27,8 +27,8 @@
         body: JSON.stringify({
           product: price,
           frequency: freq,
-          firstname: name.split(" ")[0],
-          lastname: name.split(" ")[name.split(" ").length-1],
+          firstname: name.trim().split(" ")[0],
+          lastname: name.trim().split(" ").splice(1).join(' '),
           email: email,
           phone: phone
         })
