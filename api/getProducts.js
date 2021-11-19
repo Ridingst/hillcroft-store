@@ -47,6 +47,10 @@ module.exports = (req, res) => {
         // This filters any products that are null or don't have an active price
         return data.filter((el) => {return (el != null && el.price_id != null)})
     })
+    .then(data => {
+        // This filters any products that have a hidden_from_store flag set to true
+        return data.filter((el) => {return (el != null && el.metadata != null && el.metadata.hidden_from_store != "True")})
+    })
     .then((data) =>{
         res.send({
             status: 'Ok',
