@@ -3,7 +3,7 @@
     export let name;
     export let metadata;
     export let description = " ";
-    export let image = '/images/hillcroft_lacrosse_club_logo.png';
+    export let image = '/images/hillcroft_lacrosse_club_logo_trans.png';
     export let price_id;
     export let price_metadata = {};
     export let price_nickname;
