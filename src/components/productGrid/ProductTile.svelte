@@ -23,7 +23,7 @@
         <div class="flex flex-wrap w-full flex-1">
           <div class="w-full mx-auto my-4 bg-white border rounded-lg shadow-xl lg:w-full border-black">
             <div class="p-6 text-center">
-              <img alt="{name}" class="flex-shrink-0 object-cover object-center w-16 h-16 mx-auto -mt-12 rounded-full shadow-xl aboslute border-black border-2 bg-black" src="{image}">
+              <img alt="{name}" class="flex-shrink-0 object-cover object-center w-16 h-16 mx-auto -mt-12 rounded-full shadow-xl aboslute border-black border-2 bg-white" src="{image}">
               <h2 class="pt-4text-xs font-semibold tracking-widest text-black uppercase title-font hidden md:visible">HILLCROFT</h2>
               <p class="mb-2 text-4xl font-semibold leading-none text-yellow title-font pt-2">£{price/100}{#if frequency==='month|1'}<span class="text-lg font-semibold"> /month</span>{:else if frequency==="month|3"}<span class="text-lg font-semibold"> /quarter</span>{/if}</p>
               <h4 class="mb-2 text-2xl font-semibold leading-none text-black lg:text-3xl title-font ">{name}</h4>
