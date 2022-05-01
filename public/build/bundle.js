@@ -666,6 +666,11 @@ var app = (function () {
     	let svg1;
     	let rect;
     	let path1;
+    	let t5;
+    	let p;
+    	let t6;
+    	let a2;
+    	let t8;
 
     	const block = {
     		c: function create() {
@@ -687,6 +692,12 @@ var app = (function () {
     			svg1 = svg_element("svg");
     			rect = svg_element("rect");
     			path1 = svg_element("path");
+    			t5 = space();
+    			p = element("p");
+    			t6 = text("At Hillcroft we do not believe that anyone's financial or employment situation should be a barrier to playing and enjoying lacrosse. If you would like to have a private conversation, please either speak to one of the committee members or email ");
+    			a2 = element("a");
+    			a2.textContent = "info@HillcroftLacrosse.com";
+    			t8 = text(" so we can discuss what works best for you.");
     			attr_dev(h2, "class", "lg:mb-8 mb-4 text-xs font-semibold tracking-widest text-black uppercase title-font");
     			add_location(h2, file$6, 4, 8, 208);
     			attr_dev(h1, "class", "mx-auto lg:mb-8 mb-1 text-center text-2xl font-semibold leading-none tracking-tighter text-black lg:w-3/4 sm:text-6xl title-font");
@@ -725,6 +736,10 @@ var app = (function () {
     			add_location(a1, file$6, 12, 12, 1004);
     			attr_dev(span, "class", "inline-flex justify-center mx-auto md:mt-4 sm:mt-0 w-full");
     			add_location(span, file$6, 6, 8, 542);
+    			attr_dev(a2, "href", "mailto:info@hillcroftlacrosse.com");
+    			add_location(a2, file$6, 19, 371, 1848);
+    			attr_dev(p, "class", "lg:mt-8 lg:mb-8 mt-4 mb-4 text-xs font-semibold tracking-widest text-black uppercase title-font text-center");
+    			add_location(p, file$6, 19, 8, 1485);
     			attr_dev(div0, "class", "flex flex-col w-full mb-2 lg:mb-8 text-left lg:text-center");
     			add_location(div0, file$6, 3, 8, 127);
     			attr_dev(div1, "class", "container flex flex-col items-center px-5 py-2 lg:py-8 mx-auto");
@@ -752,6 +767,11 @@ var app = (function () {
     			append_dev(a1, svg1);
     			append_dev(svg1, rect);
     			append_dev(svg1, path1);
+    			append_dev(div0, t5);
+    			append_dev(div0, p);
+    			append_dev(p, t6);
+    			append_dev(p, a2);
+    			append_dev(p, t8);
     		},
     		p: noop,
     		i: noop,
@@ -1013,7 +1033,7 @@ var app = (function () {
     			span = element("span");
     			span.textContent = "/quarter";
     			attr_dev(span, "class", "text-lg font-semibold");
-    			add_location(span, file$4, 27, 215, 1177);
+    			add_location(span, file$4, 27, 215, 1192);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, span, anchor);
@@ -1043,7 +1063,7 @@ var app = (function () {
     			span = element("span");
     			span.textContent = "/month";
     			attr_dev(span, "class", "text-lg font-semibold");
-    			add_location(span, file$4, 27, 133, 1095);
+    			add_location(span, file$4, 27, 133, 1110);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, span, anchor);
@@ -1164,36 +1184,36 @@ var app = (function () {
     			span = element("span");
     			span.textContent = "Buy Now";
     			attr_dev(img, "alt", /*name*/ ctx[0]);
-    			attr_dev(img, "class", "flex-shrink-0 object-cover object-center w-16 h-16 mx-auto -mt-12 rounded-full shadow-xl aboslute border-black border-2");
+    			attr_dev(img, "class", "flex-shrink-0 object-cover object-center w-16 h-16 mx-auto -mt-12 rounded-full shadow-xl aboslute border-black border-2 bg-white");
     			if (img.src !== (img_src_value = /*image*/ ctx[2])) attr_dev(img, "src", img_src_value);
-    			add_location(img, file$4, 25, 14, 668);
+    			add_location(img, file$4, 25, 14, 674);
     			attr_dev(h2, "class", "pt-4text-xs font-semibold tracking-widest text-black uppercase title-font hidden md:visible");
-    			add_location(h2, file$4, 26, 14, 843);
+    			add_location(h2, file$4, 26, 14, 858);
     			attr_dev(p0, "class", "mb-2 text-4xl font-semibold leading-none text-yellow title-font pt-2");
-    			add_location(p0, file$4, 27, 14, 976);
+    			add_location(p0, file$4, 27, 14, 991);
     			attr_dev(h4, "class", "mb-2 text-2xl font-semibold leading-none text-black lg:text-3xl title-font ");
-    			add_location(h4, file$4, 28, 14, 1253);
+    			add_location(h4, file$4, 28, 14, 1268);
     			attr_dev(p1, "class", "mb-3 text-base leading-relaxed text-blueGray-500");
-    			add_location(p1, file$4, 29, 14, 1367);
+    			add_location(p1, file$4, 29, 14, 1382);
     			attr_dev(path, "d", "M14.781,14.347h1.738c0.24,0,0.436-0.194,0.436-0.435v-1.739c0-0.239-0.195-0.435-0.436-0.435h-1.738c-0.239,0-0.435,0.195-0.435,0.435v1.739C14.347,14.152,14.542,14.347,14.781,14.347 M18.693,3.045H1.307c-0.48,0-0.869,0.39-0.869,0.869v12.17c0,0.479,0.389,0.869,0.869,0.869h17.387c0.479,0,0.869-0.39,0.869-0.869V3.915C19.562,3.435,19.173,3.045,18.693,3.045 M18.693,16.085H1.307V9.13h17.387V16.085z M18.693,5.653H1.307V3.915h17.387V5.653zM3.48,12.608h7.824c0.24,0,0.435-0.195,0.435-0.436c0-0.239-0.194-0.435-0.435-0.435H3.48c-0.24,0-0.435,0.195-0.435,0.435C3.045,12.413,3.24,12.608,3.48,12.608 M3.48,14.347h6.085c0.24,0,0.435-0.194,0.435-0.435s-0.195-0.435-0.435-0.435H3.48c-0.24,0-0.435,0.194-0.435,0.435S3.24,14.347,3.48,14.347");
-    			add_location(path, file$4, 31, 110, 1730);
+    			add_location(path, file$4, 31, 110, 1745);
     			attr_dev(svg, "class", "fill-current w-4 h-4 mr-2");
     			attr_dev(svg, "xmlns", "http://www.w3.org/2000/svg");
     			attr_dev(svg, "viewBox", "0 0 20 20");
-    			add_location(svg, file$4, 31, 16, 1636);
+    			add_location(svg, file$4, 31, 16, 1651);
     			attr_dev(span, "class", "");
-    			add_location(span, file$4, 32, 16, 2487);
+    			add_location(span, file$4, 32, 16, 2502);
     			attr_dev(button, "class", "bg-yellow text-white border-0 py-2 px-4 rounded inline-flex items-center");
-    			add_location(button, file$4, 30, 14, 1488);
+    			add_location(button, file$4, 30, 14, 1503);
     			attr_dev(div0, "class", "p-6 text-center");
-    			add_location(div0, file$4, 24, 12, 624);
+    			add_location(div0, file$4, 24, 12, 630);
     			attr_dev(div1, "class", "w-full mx-auto my-4 bg-white border rounded-lg shadow-xl lg:w-full border-black");
-    			add_location(div1, file$4, 23, 10, 518);
+    			add_location(div1, file$4, 23, 10, 524);
     			attr_dev(div2, "class", "flex flex-wrap w-full flex-1");
-    			add_location(div2, file$4, 22, 8, 465);
+    			add_location(div2, file$4, 22, 8, 471);
     			attr_dev(div3, "class", "container items-center px-5 py-2 lg:px-10");
-    			add_location(div3, file$4, 21, 4, 401);
-    			add_location(section, file$4, 17, 0, 378);
+    			add_location(div3, file$4, 21, 4, 407);
+    			add_location(section, file$4, 17, 0, 384);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1312,7 +1332,7 @@ var app = (function () {
     	let { name } = $$props;
     	let { metadata } = $$props;
     	let { description = " " } = $$props;
-    	let { image = "/images/hillcroft_lacrosse_club_logo.png" } = $$props;
+    	let { image = "/images/hillcroft_lacrosse_club_logo_trans.png" } = $$props;
     	let { price_id } = $$props;
     	let { price_metadata = {} } = $$props;
     	let { price_nickname } = $$props;
@@ -1677,101 +1697,107 @@ var app = (function () {
     			span2 = element("span");
     			span2.textContent = "Back to store";
     			attr_dev(div0, "class", "fixed top-0 left-0 right-0 bottom-0 w-full h-full bg-gray-700 opacity-75 z-10");
-    			add_location(div0, file$3, 81, 2, 2266);
+    			add_location(div0, file$3, 81, 2, 2274);
     			attr_dev(h1, "class", "text-lg text-center font-bold");
-    			add_location(h1, file$3, 85, 6, 2546);
+    			add_location(h1, file$3, 85, 6, 2554);
     			if (img.src !== (img_src_value = "/images/hillcroft_lacrosse_club_logo.png")) attr_dev(img, "src", img_src_value);
     			attr_dev(img, "alt", "Hillcroft Lacrosse Club Logo");
     			attr_dev(img, "class", "object-none object-center w-auto mx-auto py-5");
-    			add_location(img, file$3, 86, 6, 2629);
+    			add_location(img, file$3, 86, 6, 2637);
     			attr_dev(label0, "class", "font-semibold text-sm text-gray-600 pb-1 block");
     			attr_dev(label0, "for", "name");
-    			add_location(label0, file$3, 90, 10, 2902);
+    			add_location(label0, file$3, 90, 10, 2910);
     			attr_dev(input0, "id", "name");
+    			input0.required = true;
+    			attr_dev(input0, "autocomplete", "name");
     			attr_dev(input0, "type", "text");
     			attr_dev(input0, "class", "border rounded-lg px-3 py-2 mt-1 mb-5 text-sm w-full");
-    			add_location(input0, file$3, 91, 10, 3003);
+    			add_location(input0, file$3, 91, 10, 3011);
     			attr_dev(label1, "class", "font-semibold text-sm text-gray-600 pb-1 block");
     			attr_dev(label1, "for", "email");
-    			add_location(label1, file$3, 92, 10, 3124);
+    			add_location(label1, file$3, 92, 10, 3161);
     			attr_dev(input1, "id", "email");
+    			input1.required = true;
+    			attr_dev(input1, "autocomplete", "email");
     			attr_dev(input1, "type", "text");
     			attr_dev(input1, "class", "border rounded-lg px-3 py-2 mt-1 mb-5 text-sm w-full");
-    			add_location(input1, file$3, 93, 10, 3222);
+    			add_location(input1, file$3, 93, 10, 3259);
     			attr_dev(label2, "class", "font-semibold text-sm text-gray-600 pb-1 block");
     			attr_dev(label2, "for", "phone");
-    			add_location(label2, file$3, 94, 10, 3344);
+    			add_location(label2, file$3, 94, 10, 3411);
     			attr_dev(input2, "id", "phone");
+    			input2.required = true;
+    			attr_dev(input2, "autocomplete", "tel");
     			attr_dev(input2, "type", "text");
     			attr_dev(input2, "class", "border rounded-lg px-3 py-2 mt-1 mb-5 text-sm w-full");
-    			add_location(input2, file$3, 95, 10, 3450);
+    			add_location(input2, file$3, 95, 10, 3517);
     			attr_dev(span0, "class", "flex items-center font-medium tracking-wide text-red-500 text-xs mt-1 ml-1 m-2");
     			toggle_class(span0, "hidden", /*isValid*/ ctx[4]);
-    			add_location(span0, file$3, 96, 10, 3572);
+    			add_location(span0, file$3, 96, 10, 3667);
     			attr_dev(path0, "stroke-linecap", "round");
     			attr_dev(path0, "stroke-linejoin", "round");
     			attr_dev(path0, "stroke-width", "2");
     			attr_dev(path0, "d", "M17 8l4 4m0 0l-4 4m4-4H3");
-    			add_location(path0, file$3, 102, 16, 4273);
+    			add_location(path0, file$3, 102, 16, 4368);
     			attr_dev(svg0, "xmlns", "http://www.w3.org/2000/svg");
     			attr_dev(svg0, "fill", "none");
     			attr_dev(svg0, "viewBox", "0 0 24 24");
     			attr_dev(svg0, "stroke", "currentColor");
     			attr_dev(svg0, "class", "w-4 h-4 inline-block");
     			toggle_class(svg0, "hidden", /*isLoading*/ ctx[5]);
-    			add_location(svg0, file$3, 101, 14, 4105);
+    			add_location(svg0, file$3, 101, 14, 4200);
     			attr_dev(circle, "class", "opacity-25");
     			attr_dev(circle, "cx", "12");
     			attr_dev(circle, "cy", "12");
     			attr_dev(circle, "r", "10");
     			attr_dev(circle, "stroke", "currentColor");
     			attr_dev(circle, "stroke-width", "4");
-    			add_location(circle, file$3, 106, 16, 4542);
+    			add_location(circle, file$3, 106, 16, 4637);
     			attr_dev(path1, "class", "opacity-75");
     			attr_dev(path1, "fill", "currentColor");
     			attr_dev(path1, "d", "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z");
-    			add_location(path1, file$3, 107, 16, 4657);
+    			add_location(path1, file$3, 107, 16, 4752);
     			attr_dev(svg1, "class", "animate-spin h-5 w-5 mr-3 inline-block");
     			attr_dev(svg1, "viewBox", "0 0 24 24");
     			toggle_class(svg1, "hidden", !/*isLoading*/ ctx[5]);
-    			add_location(svg1, file$3, 105, 14, 4425);
+    			add_location(svg1, file$3, 105, 14, 4520);
     			attr_dev(span1, "class", "inline-block mr-2");
-    			add_location(span1, file$3, 100, 12, 4051);
+    			add_location(span1, file$3, 100, 12, 4146);
     			attr_dev(button0, "type", "button");
     			attr_dev(button0, "class", "transition duration-200 bg-blue-500 hover:bg-blue-600 focus:bg-blue-700 focus:shadow-sm focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 text-white w-full py-2.5 rounded-lg text-sm shadow-sm hover:shadow-md font-semibold text-center inline-block");
-    			add_location(button0, file$3, 99, 10, 3734);
+    			add_location(button0, file$3, 99, 10, 3829);
     			attr_dev(div1, "class", "px-5 py-7");
-    			add_location(div1, file$3, 89, 8, 2868);
+    			add_location(div1, file$3, 89, 8, 2876);
     			attr_dev(div2, "class", "bg-white shadow w-full rounded-lg divide-y divide-gray-200");
-    			add_location(div2, file$3, 87, 6, 2778);
+    			add_location(div2, file$3, 87, 6, 2786);
     			attr_dev(path2, "stroke-linecap", "round");
     			attr_dev(path2, "stroke-linejoin", "round");
     			attr_dev(path2, "stroke-width", "2");
     			attr_dev(path2, "d", "M10 19l-7-7m0 0l7-7m-7 7h18");
-    			add_location(path2, file$3, 124, 16, 5579);
+    			add_location(path2, file$3, 124, 16, 5674);
     			attr_dev(svg2, "xmlns", "http://www.w3.org/2000/svg");
     			attr_dev(svg2, "fill", "none");
     			attr_dev(svg2, "viewBox", "0 0 24 24");
     			attr_dev(svg2, "stroke", "currentColor");
     			attr_dev(svg2, "class", "w-4 h-4 inline-block align-text-top");
-    			add_location(svg2, file$3, 117, 14, 5329);
+    			add_location(svg2, file$3, 117, 14, 5424);
     			attr_dev(span2, "class", "inline-block ml-1");
-    			add_location(span2, file$3, 131, 14, 5807);
+    			add_location(span2, file$3, 131, 14, 5902);
     			attr_dev(button1, "class", "transition duration-200 px-5 py-4 cursor-pointer font-normal text-sm rounded-lg text-gray-500 hover:bg-gray-200 focus:outline-none focus:bg-gray-300 focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 ring-inset");
-    			add_location(button1, file$3, 116, 12, 5062);
+    			add_location(button1, file$3, 116, 12, 5157);
     			attr_dev(div3, "class", "text-center sm:text-left whitespace-nowrap");
-    			add_location(div3, file$3, 115, 10, 4993);
+    			add_location(div3, file$3, 115, 10, 5088);
     			attr_dev(div4, "class", "grid grid-cols-2 gap-1");
-    			add_location(div4, file$3, 114, 8, 4946);
+    			add_location(div4, file$3, 114, 8, 5041);
     			attr_dev(div5, "class", "py-5");
-    			add_location(div5, file$3, 113, 6, 4919);
+    			add_location(div5, file$3, 113, 6, 5014);
     			attr_dev(div6, "class", "px-10 py-10 mx-auto md:w-full md:max-w-md");
-    			add_location(div6, file$3, 84, 4, 2484);
+    			add_location(div6, file$3, 84, 4, 2492);
     			attr_dev(div7, "class", "bg-gray-100 flex opacity-100 flex-col justify-center sm:p-8 mx-4 my-8 rounded-lg z-20 max-h-full");
-    			add_location(div7, file$3, 83, 2, 2369);
+    			add_location(div7, file$3, 83, 2, 2377);
     			attr_dev(div8, "wire:loading", "");
     			attr_dev(div8, "class", div8_class_value = "" + ((/*emailOpen*/ ctx[0] ? "" : "hidden") + " fixed top-0 left-0 right-0 bottom-0 w-full h-screen overflow-hidden flex flex-col items-center justify-center p-4"));
-    			add_location(div8, file$3, 79, 0, 2094);
+    			add_location(div8, file$3, 79, 0, 2102);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1924,8 +1950,8 @@ var app = (function () {
     					body: JSON.stringify({
     						product: price,
     						frequency: freq,
-    						firstname: name.split(" ")[0],
-    						lastname: name.split(" ")[name.split(" ").length - 1],
+    						firstname: name.trim().split(" ")[0],
+    						lastname: name.trim().split(" ").splice(1).join(" "),
     						email,
     						phone
     					})
