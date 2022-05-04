@@ -33,123 +33,22 @@ var app = (function () {
     function safe_not_equal(a, b) {
         return a != a ? b == b : a !== b || ((a && typeof a === 'object') || typeof a === 'function');
     }
+    let src_url_equal_anchor;
+    function src_url_equal(element_src, url) {
+        if (!src_url_equal_anchor) {
+            src_url_equal_anchor = document.createElement('a');
+        }
+        src_url_equal_anchor.href = url;
+        return element_src === src_url_equal_anchor.href;
+    }
     function is_empty(obj) {
         return Object.keys(obj).length === 0;
     }
-
-    // Track which nodes are claimed during hydration. Unclaimed nodes can then be removed from the DOM
-    // at the end of hydration without touching the remaining nodes.
-    let is_hydrating = false;
-    function start_hydrating() {
-        is_hydrating = true;
-    }
-    function end_hydrating() {
-        is_hydrating = false;
-    }
-    function upper_bound(low, high, key, value) {
-        // Return first index of value larger than input value in the range [low, high)
-        while (low < high) {
-            const mid = low + ((high - low) >> 1);
-            if (key(mid) <= value) {
-                low = mid + 1;
-            }
-            else {
-                high = mid;
-            }
-        }
-        return low;
-    }
-    function init_hydrate(target) {
-        if (target.hydrate_init)
-            return;
-        target.hydrate_init = true;
-        // We know that all children have claim_order values since the unclaimed have been detached
-        const children = target.childNodes;
-        /*
-        * Reorder claimed children optimally.
-        * We can reorder claimed children optimally by finding the longest subsequence of
-        * nodes that are already claimed in order and only moving the rest. The longest
-        * subsequence subsequence of nodes that are claimed in order can be found by
-        * computing the longest increasing subsequence of .claim_order values.
-        *
-        * This algorithm is optimal in generating the least amount of reorder operations
-        * possible.
-        *
-        * Proof:
-        * We know that, given a set of reordering operations, the nodes that do not move
-        * always form an increasing subsequence, since they do not move among each other
-        * meaning that they must be already ordered among each other. Thus, the maximal
-        * set of nodes that do not move form a longest increasing subsequence.
-        */
-        // Compute longest increasing subsequence
-        // m: subsequence length j => index k of smallest value that ends an increasing subsequence of length j
-        const m = new Int32Array(children.length + 1);
-        // Predecessor indices + 1
-        const p = new Int32Array(children.length);
-        m[0] = -1;
-        let longest = 0;
-        for (let i = 0; i < children.length; i++) {
-            const current = children[i].claim_order;
-            // Find the largest subsequence length such that it ends in a value less than our current value
-            // upper_bound returns first greater value, so we subtract one
-            const seqLen = upper_bound(1, longest + 1, idx => children[m[idx]].claim_order, current) - 1;
-            p[i] = m[seqLen] + 1;
-            const newLen = seqLen + 1;
-            // We can guarantee that current is the smallest value. Otherwise, we would have generated a longer sequence.
-            m[newLen] = i;
-            longest = Math.max(newLen, longest);
-        }
-        // The longest increasing subsequence of nodes (initially reversed)
-        const lis = [];
-        // The rest of the nodes, nodes that will be moved
-        const toMove = [];
-        let last = children.length - 1;
-        for (let cur = m[longest] + 1; cur != 0; cur = p[cur - 1]) {
-            lis.push(children[cur - 1]);
-            for (; last >= cur; last--) {
-                toMove.push(children[last]);
-            }
-            last--;
-        }
-        for (; last >= 0; last--) {
-            toMove.push(children[last]);
-        }
-        lis.reverse();
-        // We sort the nodes being moved to guarantee that their insertion order matches the claim order
-        toMove.sort((a, b) => a.claim_order - b.claim_order);
-        // Finally, we move the nodes
-        for (let i = 0, j = 0; i < toMove.length; i++) {
-            while (j < lis.length && toMove[i].claim_order >= lis[j].claim_order) {
-                j++;
-            }
-            const anchor = j < lis.length ? lis[j] : null;
-            target.insertBefore(toMove[i], anchor);
-        }
-    }
     function append(target, node) {
-        if (is_hydrating) {
-            init_hydrate(target);
-            if ((target.actual_end_child === undefined) || ((target.actual_end_child !== null) && (target.actual_end_child.parentElement !== target))) {
-                target.actual_end_child = target.firstChild;
-            }
-            if (node !== target.actual_end_child) {
-                target.insertBefore(node, target.actual_end_child);
-            }
-            else {
-                target.actual_end_child = node.nextSibling;
-            }
-        }
-        else if (node.parentNode !== target) {
-            target.appendChild(node);
-        }
+        target.appendChild(node);
     }
     function insert(target, node, anchor) {
-        if (is_hydrating && !anchor) {
-            append(target, node);
-        }
-        else if (node.parentNode !== target || (anchor && node.nextSibling !== anchor)) {
-            target.insertBefore(node, anchor || null);
-        }
+        target.insertBefore(node, anchor || null);
     }
     function detach(node) {
         node.parentNode.removeChild(node);
@@ -194,9 +93,9 @@ var app = (function () {
     function toggle_class(element, name, toggle) {
         element.classList[toggle ? 'add' : 'remove'](name);
     }
-    function custom_event(type, detail) {
+    function custom_event(type, detail, { bubbles = false, cancelable = false } = {}) {
         const e = document.createEvent('CustomEvent');
-        e.initCustomEvent(type, false, false, detail);
+        e.initCustomEvent(type, bubbles, cancelable, detail);
         return e;
     }
 
@@ -228,22 +127,40 @@ var app = (function () {
     function add_render_callback(fn) {
         render_callbacks.push(fn);
     }
-    let flushing = false;
+    // flush() calls callbacks in this order:
+    // 1. All beforeUpdate callbacks, in order: parents before children
+    // 2. All bind:this callbacks, in reverse order: children before parents.
+    // 3. All afterUpdate callbacks, in order: parents before children. EXCEPT
+    //    for afterUpdates called during the initial onMount, which are called in
+    //    reverse order: children before parents.
+    // Since callbacks might update component values, which could trigger another
+    // call to flush(), the following steps guard against this:
+    // 1. During beforeUpdate, any updated components will be added to the
+    //    dirty_components array and will cause a reentrant call to flush(). Because
+    //    the flush index is kept outside the function, the reentrant call will pick
+    //    up where the earlier call left off and go through all dirty components. The
+    //    current_component value is saved and restored so that the reentrant call will
+    //    not interfere with the "parent" flush() call.
+    // 2. bind:this callbacks cannot trigger new flush() calls.
+    // 3. During afterUpdate, any updated components will NOT have their afterUpdate
+    //    callback called a second time; the seen_callbacks set, outside the flush()
+    //    function, guarantees this behavior.
     const seen_callbacks = new Set();
+    let flushidx = 0; // Do *not* move this inside the flush() function
     function flush() {
-        if (flushing)
-            return;
-        flushing = true;
+        const saved_component = current_component;
         do {
             // first, call beforeUpdate functions
             // and update components
-            for (let i = 0; i < dirty_components.length; i += 1) {
-                const component = dirty_components[i];
+            while (flushidx < dirty_components.length) {
+                const component = dirty_components[flushidx];
+                flushidx++;
                 set_current_component(component);
                 update(component.$$);
             }
             set_current_component(null);
             dirty_components.length = 0;
+            flushidx = 0;
             while (binding_callbacks.length)
                 binding_callbacks.pop()();
             // then, once components are updated, call
@@ -263,8 +180,8 @@ var app = (function () {
             flush_callbacks.pop()();
         }
         update_scheduled = false;
-        flushing = false;
         seen_callbacks.clear();
+        set_current_component(saved_component);
     }
     function update($$) {
         if ($$.fragment !== null) {
@@ -480,7 +397,7 @@ var app = (function () {
         }
         component.$$.dirty[(i / 31) | 0] |= (1 << (i % 31));
     }
-    function init(component, options, instance, create_fragment, not_equal, props, dirty = [-1]) {
+    function init(component, options, instance, create_fragment, not_equal, props, append_styles, dirty = [-1]) {
         const parent_component = current_component;
         set_current_component(component);
         const $$ = component.$$ = {
@@ -497,12 +414,14 @@ var app = (function () {
             on_disconnect: [],
             before_update: [],
             after_update: [],
-            context: new Map(parent_component ? parent_component.$$.context : options.context || []),
+            context: new Map(options.context || (parent_component ? parent_component.$$.context : [])),
             // everything else
             callbacks: blank_object(),
             dirty,
-            skip_bound: false
+            skip_bound: false,
+            root: options.target || parent_component.$$.root
         };
+        append_styles && append_styles($$.root);
         let ready = false;
         $$.ctx = instance
             ? instance(component, options.props || {}, (i, ret, ...rest) => {
@@ -523,7 +442,6 @@ var app = (function () {
         $$.fragment = create_fragment ? create_fragment($$.ctx) : false;
         if (options.target) {
             if (options.hydrate) {
-                start_hydrating();
                 const nodes = children(options.target);
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 $$.fragment && $$.fragment.l(nodes);
@@ -536,7 +454,6 @@ var app = (function () {
             if (options.intro)
                 transition_in(component.$$.fragment);
             mount_component(component, options.target, options.anchor, options.customElement);
-            end_hydrating();
             flush();
         }
         set_current_component(parent_component);
@@ -568,7 +485,7 @@ var app = (function () {
     }
 
     function dispatch_dev(type, detail) {
-        document.dispatchEvent(custom_event(type, Object.assign({ version: '3.38.3' }, detail)));
+        document.dispatchEvent(custom_event(type, Object.assign({ version: '3.48.0' }, detail), { bubbles: true }));
     }
     function append_dev(target, node) {
         dispatch_dev('SvelteDOMInsert', { target, node });
@@ -645,7 +562,7 @@ var app = (function () {
         $inject_state() { }
     }
 
-    /* src/components/Header.svelte generated by Svelte v3.38.3 */
+    /* src/components/Header.svelte generated by Svelte v3.48.0 */
 
     const file$6 = "src/components/Header.svelte";
 
@@ -794,11 +711,11 @@ var app = (function () {
 
     function instance$7($$self, $$props) {
     	let { $$slots: slots = {}, $$scope } = $$props;
-    	validate_slots("Header", slots, []);
+    	validate_slots('Header', slots, []);
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<Header> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console.warn(`<Header> was created with unknown prop '${key}'`);
     	});
 
     	return [];
@@ -818,7 +735,7 @@ var app = (function () {
     	}
     }
 
-    /* src/components/Footer.svelte generated by Svelte v3.38.3 */
+    /* src/components/Footer.svelte generated by Svelte v3.48.0 */
 
     const file$5 = "src/components/Footer.svelte";
 
@@ -885,11 +802,11 @@ var app = (function () {
 
     function instance$6($$self, $$props) {
     	let { $$slots: slots = {}, $$scope } = $$props;
-    	validate_slots("Footer", slots, []);
+    	validate_slots('Footer', slots, []);
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<Footer> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console.warn(`<Footer> was created with unknown prop '${key}'`);
     	});
 
     	return [];
@@ -917,16 +834,15 @@ var app = (function () {
      */
     function writable(value, start = noop) {
         let stop;
-        const subscribers = [];
+        const subscribers = new Set();
         function set(new_value) {
             if (safe_not_equal(value, new_value)) {
                 value = new_value;
                 if (stop) { // store is ready
                     const run_queue = !subscriber_queue.length;
-                    for (let i = 0; i < subscribers.length; i += 1) {
-                        const s = subscribers[i];
-                        s[1]();
-                        subscriber_queue.push(s, value);
+                    for (const subscriber of subscribers) {
+                        subscriber[1]();
+                        subscriber_queue.push(subscriber, value);
                     }
                     if (run_queue) {
                         for (let i = 0; i < subscriber_queue.length; i += 2) {
@@ -942,17 +858,14 @@ var app = (function () {
         }
         function subscribe(run, invalidate = noop) {
             const subscriber = [run, invalidate];
-            subscribers.push(subscriber);
-            if (subscribers.length === 1) {
+            subscribers.add(subscriber);
+            if (subscribers.size === 1) {
                 stop = start(set) || noop;
             }
             run(value);
             return () => {
-                const index = subscribers.indexOf(subscriber);
-                if (index !== -1) {
-                    subscribers.splice(index, 1);
-                }
-                if (subscribers.length === 0) {
+                subscribers.delete(subscriber);
+                if (subscribers.size === 0) {
                     stop();
                     stop = null;
                 }
@@ -1021,7 +934,7 @@ var app = (function () {
         window.location.href = '/';
     }
 
-    /* src/components/productGrid/ProductTile.svelte generated by Svelte v3.38.3 */
+    /* src/components/productGrid/ProductTile.svelte generated by Svelte v3.48.0 */
     const file$4 = "src/components/productGrid/ProductTile.svelte";
 
     // (28:215) 
@@ -1145,7 +1058,7 @@ var app = (function () {
     	let dispose;
 
     	function select_block_type(ctx, dirty) {
-    		if (/*frequency*/ ctx[4] === "month|1") return create_if_block_1;
+    		if (/*frequency*/ ctx[4] === 'month|1') return create_if_block_1;
     		if (/*frequency*/ ctx[4] === "month|3") return create_if_block_2;
     	}
 
@@ -1185,7 +1098,7 @@ var app = (function () {
     			span.textContent = "Buy Now";
     			attr_dev(img, "alt", /*name*/ ctx[0]);
     			attr_dev(img, "class", "flex-shrink-0 object-cover object-center w-16 h-16 mx-auto -mt-12 rounded-full shadow-xl aboslute border-black border-2 bg-white");
-    			if (img.src !== (img_src_value = /*image*/ ctx[2])) attr_dev(img, "src", img_src_value);
+    			if (!src_url_equal(img.src, img_src_value = /*image*/ ctx[2])) attr_dev(img, "src", img_src_value);
     			add_location(img, file$4, 25, 14, 674);
     			attr_dev(h2, "class", "pt-4text-xs font-semibold tracking-widest text-black uppercase title-font hidden md:visible");
     			add_location(h2, file$4, 26, 14, 858);
@@ -1268,7 +1181,7 @@ var app = (function () {
     				attr_dev(img, "alt", /*name*/ ctx[0]);
     			}
 
-    			if (dirty & /*image*/ 4 && img.src !== (img_src_value = /*image*/ ctx[2])) {
+    			if (dirty & /*image*/ 4 && !src_url_equal(img.src, img_src_value = /*image*/ ctx[2])) {
     				attr_dev(img, "src", img_src_value);
     			}
 
@@ -1327,12 +1240,12 @@ var app = (function () {
 
     function instance$5($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
-    	validate_slots("ProductTile", slots, []);
+    	validate_slots('ProductTile', slots, []);
     	let { id } = $$props;
     	let { name } = $$props;
     	let { metadata } = $$props;
     	let { description = " " } = $$props;
-    	let { image = "/images/hillcroft_lacrosse_club_logo_trans.png" } = $$props;
+    	let { image = '/images/hillcroft_lacrosse_club_logo_trans.png' } = $$props;
     	let { price_id } = $$props;
     	let { price_metadata = {} } = $$props;
     	let { price_nickname } = $$props;
@@ -1340,33 +1253,33 @@ var app = (function () {
     	let { price } = $$props;
 
     	const writable_props = [
-    		"id",
-    		"name",
-    		"metadata",
-    		"description",
-    		"image",
-    		"price_id",
-    		"price_metadata",
-    		"price_nickname",
-    		"frequency",
-    		"price"
+    		'id',
+    		'name',
+    		'metadata',
+    		'description',
+    		'image',
+    		'price_id',
+    		'price_metadata',
+    		'price_nickname',
+    		'frequency',
+    		'price'
     	];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<ProductTile> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console.warn(`<ProductTile> was created with unknown prop '${key}'`);
     	});
 
     	$$self.$$set = $$props => {
-    		if ("id" in $$props) $$invalidate(6, id = $$props.id);
-    		if ("name" in $$props) $$invalidate(0, name = $$props.name);
-    		if ("metadata" in $$props) $$invalidate(7, metadata = $$props.metadata);
-    		if ("description" in $$props) $$invalidate(1, description = $$props.description);
-    		if ("image" in $$props) $$invalidate(2, image = $$props.image);
-    		if ("price_id" in $$props) $$invalidate(3, price_id = $$props.price_id);
-    		if ("price_metadata" in $$props) $$invalidate(8, price_metadata = $$props.price_metadata);
-    		if ("price_nickname" in $$props) $$invalidate(9, price_nickname = $$props.price_nickname);
-    		if ("frequency" in $$props) $$invalidate(4, frequency = $$props.frequency);
-    		if ("price" in $$props) $$invalidate(5, price = $$props.price);
+    		if ('id' in $$props) $$invalidate(6, id = $$props.id);
+    		if ('name' in $$props) $$invalidate(0, name = $$props.name);
+    		if ('metadata' in $$props) $$invalidate(7, metadata = $$props.metadata);
+    		if ('description' in $$props) $$invalidate(1, description = $$props.description);
+    		if ('image' in $$props) $$invalidate(2, image = $$props.image);
+    		if ('price_id' in $$props) $$invalidate(3, price_id = $$props.price_id);
+    		if ('price_metadata' in $$props) $$invalidate(8, price_metadata = $$props.price_metadata);
+    		if ('price_nickname' in $$props) $$invalidate(9, price_nickname = $$props.price_nickname);
+    		if ('frequency' in $$props) $$invalidate(4, frequency = $$props.frequency);
+    		if ('price' in $$props) $$invalidate(5, price = $$props.price);
     	};
 
     	$$self.$capture_state = () => ({
@@ -1384,16 +1297,16 @@ var app = (function () {
     	});
 
     	$$self.$inject_state = $$props => {
-    		if ("id" in $$props) $$invalidate(6, id = $$props.id);
-    		if ("name" in $$props) $$invalidate(0, name = $$props.name);
-    		if ("metadata" in $$props) $$invalidate(7, metadata = $$props.metadata);
-    		if ("description" in $$props) $$invalidate(1, description = $$props.description);
-    		if ("image" in $$props) $$invalidate(2, image = $$props.image);
-    		if ("price_id" in $$props) $$invalidate(3, price_id = $$props.price_id);
-    		if ("price_metadata" in $$props) $$invalidate(8, price_metadata = $$props.price_metadata);
-    		if ("price_nickname" in $$props) $$invalidate(9, price_nickname = $$props.price_nickname);
-    		if ("frequency" in $$props) $$invalidate(4, frequency = $$props.frequency);
-    		if ("price" in $$props) $$invalidate(5, price = $$props.price);
+    		if ('id' in $$props) $$invalidate(6, id = $$props.id);
+    		if ('name' in $$props) $$invalidate(0, name = $$props.name);
+    		if ('metadata' in $$props) $$invalidate(7, metadata = $$props.metadata);
+    		if ('description' in $$props) $$invalidate(1, description = $$props.description);
+    		if ('image' in $$props) $$invalidate(2, image = $$props.image);
+    		if ('price_id' in $$props) $$invalidate(3, price_id = $$props.price_id);
+    		if ('price_metadata' in $$props) $$invalidate(8, price_metadata = $$props.price_metadata);
+    		if ('price_nickname' in $$props) $$invalidate(9, price_nickname = $$props.price_nickname);
+    		if ('frequency' in $$props) $$invalidate(4, frequency = $$props.frequency);
+    		if ('price' in $$props) $$invalidate(5, price = $$props.price);
     	};
 
     	if ($$props && "$$inject" in $$props) {
@@ -1441,31 +1354,31 @@ var app = (function () {
     		const { ctx } = this.$$;
     		const props = options.props || {};
 
-    		if (/*id*/ ctx[6] === undefined && !("id" in props)) {
+    		if (/*id*/ ctx[6] === undefined && !('id' in props)) {
     			console.warn("<ProductTile> was created without expected prop 'id'");
     		}
 
-    		if (/*name*/ ctx[0] === undefined && !("name" in props)) {
+    		if (/*name*/ ctx[0] === undefined && !('name' in props)) {
     			console.warn("<ProductTile> was created without expected prop 'name'");
     		}
 
-    		if (/*metadata*/ ctx[7] === undefined && !("metadata" in props)) {
+    		if (/*metadata*/ ctx[7] === undefined && !('metadata' in props)) {
     			console.warn("<ProductTile> was created without expected prop 'metadata'");
     		}
 
-    		if (/*price_id*/ ctx[3] === undefined && !("price_id" in props)) {
+    		if (/*price_id*/ ctx[3] === undefined && !('price_id' in props)) {
     			console.warn("<ProductTile> was created without expected prop 'price_id'");
     		}
 
-    		if (/*price_nickname*/ ctx[9] === undefined && !("price_nickname" in props)) {
+    		if (/*price_nickname*/ ctx[9] === undefined && !('price_nickname' in props)) {
     			console.warn("<ProductTile> was created without expected prop 'price_nickname'");
     		}
 
-    		if (/*frequency*/ ctx[4] === undefined && !("frequency" in props)) {
+    		if (/*frequency*/ ctx[4] === undefined && !('frequency' in props)) {
     			console.warn("<ProductTile> was created without expected prop 'frequency'");
     		}
 
-    		if (/*price*/ ctx[5] === undefined && !("price" in props)) {
+    		if (/*price*/ ctx[5] === undefined && !('price' in props)) {
     			console.warn("<ProductTile> was created without expected prop 'price'");
     		}
     	}
@@ -1590,7 +1503,7 @@ var app = (function () {
         
     }
 
-    /* src/components/productGrid/emailModal.svelte generated by Svelte v3.38.3 */
+    /* src/components/productGrid/emailModal.svelte generated by Svelte v3.48.0 */
 
     const { console: console_1$2 } = globals;
     const file$3 = "src/components/productGrid/emailModal.svelte";
@@ -1700,7 +1613,7 @@ var app = (function () {
     			add_location(div0, file$3, 81, 2, 2274);
     			attr_dev(h1, "class", "text-lg text-center font-bold");
     			add_location(h1, file$3, 85, 6, 2554);
-    			if (img.src !== (img_src_value = "/images/hillcroft_lacrosse_club_logo.png")) attr_dev(img, "src", img_src_value);
+    			if (!src_url_equal(img.src, img_src_value = "/images/hillcroft_lacrosse_club_logo.png")) attr_dev(img, "src", img_src_value);
     			attr_dev(img, "alt", "Hillcroft Lacrosse Club Logo");
     			attr_dev(img, "class", "object-none object-center w-auto mx-auto py-5");
     			add_location(img, file$3, 86, 6, 2637);
@@ -1796,7 +1709,7 @@ var app = (function () {
     			attr_dev(div7, "class", "bg-gray-100 flex opacity-100 flex-col justify-center sm:p-8 mx-4 my-8 rounded-lg z-20 max-h-full");
     			add_location(div7, file$3, 83, 2, 2377);
     			attr_dev(div8, "wire:loading", "");
-    			attr_dev(div8, "class", div8_class_value = "" + ((/*emailOpen*/ ctx[0] ? "" : "hidden") + " fixed top-0 left-0 right-0 bottom-0 w-full h-screen overflow-hidden flex flex-col items-center justify-center p-4"));
+    			attr_dev(div8, "class", div8_class_value = "" + ((/*emailOpen*/ ctx[0] ? '' : 'hidden') + " fixed top-0 left-0 right-0 bottom-0 w-full h-screen overflow-hidden flex flex-col items-center justify-center p-4"));
     			add_location(div8, file$3, 79, 0, 2102);
     		},
     		l: function claim(nodes) {
@@ -1890,7 +1803,7 @@ var app = (function () {
     				toggle_class(svg1, "hidden", !/*isLoading*/ ctx[5]);
     			}
 
-    			if (dirty & /*emailOpen*/ 1 && div8_class_value !== (div8_class_value = "" + ((/*emailOpen*/ ctx[0] ? "" : "hidden") + " fixed top-0 left-0 right-0 bottom-0 w-full h-screen overflow-hidden flex flex-col items-center justify-center p-4"))) {
+    			if (dirty & /*emailOpen*/ 1 && div8_class_value !== (div8_class_value = "" + ((/*emailOpen*/ ctx[0] ? '' : 'hidden') + " fixed top-0 left-0 right-0 bottom-0 w-full h-screen overflow-hidden flex flex-col items-center justify-center p-4"))) {
     				attr_dev(div8, "class", div8_class_value);
     			}
     		},
@@ -1916,7 +1829,7 @@ var app = (function () {
 
     function instance$4($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
-    	validate_slots("EmailModal", slots, []);
+    	validate_slots('EmailModal', slots, []);
     	let emailOpen, price, freq;
 
     	price_id.subscribe(val => {
@@ -1942,23 +1855,23 @@ var app = (function () {
     		// add loading display for user
     		return new Promise((resolve, reject) => {
     				fetch("/api/createCheckout", {
-    					method: "POST",
+    					method: 'POST',
     					headers: {
-    						"Accept": "application/json",
-    						"Content-Type": "application/json"
+    						'Accept': 'application/json',
+    						'Content-Type': 'application/json'
     					},
     					body: JSON.stringify({
     						product: price,
     						frequency: freq,
     						firstname: name.trim().split(" ")[0],
-    						lastname: name.trim().split(" ").splice(1).join(" "),
+    						lastname: name.trim().split(" ").splice(1).join(' '),
     						email,
     						phone
     					})
     				}).then(data => {
     					if (data.status !== 200) {
     						// I think this error should bubble up and get caught by the catch statement...should be tested
-    						reject("Error creating stripe session. Please try again");
+    						reject('Error creating stripe session. Please try again');
     					} else {
     						resolve(data.json());
     					}
@@ -1992,7 +1905,7 @@ var app = (function () {
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1$2.warn(`<EmailModal> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$2.warn(`<EmailModal> was created with unknown prop '${key}'`);
     	});
 
     	function input0_input_handler() {
@@ -2034,15 +1947,15 @@ var app = (function () {
     	});
 
     	$$self.$inject_state = $$props => {
-    		if ("emailOpen" in $$props) $$invalidate(0, emailOpen = $$props.emailOpen);
-    		if ("price" in $$props) price = $$props.price;
-    		if ("freq" in $$props) freq = $$props.freq;
-    		if ("name" in $$props) $$invalidate(1, name = $$props.name);
-    		if ("email" in $$props) $$invalidate(2, email = $$props.email);
-    		if ("phone" in $$props) $$invalidate(3, phone = $$props.phone);
-    		if ("isValid" in $$props) $$invalidate(4, isValid = $$props.isValid);
-    		if ("isLoading" in $$props) $$invalidate(5, isLoading = $$props.isLoading);
-    		if ("errorMessage" in $$props) $$invalidate(6, errorMessage = $$props.errorMessage);
+    		if ('emailOpen' in $$props) $$invalidate(0, emailOpen = $$props.emailOpen);
+    		if ('price' in $$props) price = $$props.price;
+    		if ('freq' in $$props) freq = $$props.freq;
+    		if ('name' in $$props) $$invalidate(1, name = $$props.name);
+    		if ('email' in $$props) $$invalidate(2, email = $$props.email);
+    		if ('phone' in $$props) $$invalidate(3, phone = $$props.phone);
+    		if ('isValid' in $$props) $$invalidate(4, isValid = $$props.isValid);
+    		if ('isLoading' in $$props) $$invalidate(5, isLoading = $$props.isLoading);
+    		if ('errorMessage' in $$props) $$invalidate(6, errorMessage = $$props.errorMessage);
     	};
 
     	if ($$props && "$$inject" in $$props) {
@@ -2078,7 +1991,7 @@ var app = (function () {
     	}
     }
 
-    /* src/components/productGrid/errorModal.svelte generated by Svelte v3.38.3 */
+    /* src/components/productGrid/errorModal.svelte generated by Svelte v3.48.0 */
     const file$2 = "src/components/productGrid/errorModal.svelte";
 
     function create_fragment$3(ctx) {
@@ -2153,7 +2066,7 @@ var app = (function () {
     			add_location(div0, file$2, 16, 4, 613);
     			attr_dev(h1, "class", "text-lg text-center font-bold");
     			add_location(h1, file$2, 20, 8, 887);
-    			if (img.src !== (img_src_value = "/images/hillcroft_lacrosse_club_logo.png")) attr_dev(img, "src", img_src_value);
+    			if (!src_url_equal(img.src, img_src_value = "/images/hillcroft_lacrosse_club_logo.png")) attr_dev(img, "src", img_src_value);
     			attr_dev(img, "alt", "Hillcroft Lacrosse Club Logo");
     			attr_dev(img, "class", "object-none object-center w-auto mx-auto py-5");
     			add_location(img, file$2, 21, 8, 972);
@@ -2195,7 +2108,7 @@ var app = (function () {
     			attr_dev(div7, "class", "bg-gray-100 flex opacity-100 flex-col justify-center sm:py-8 rounded-lg z-20");
     			add_location(div7, file$2, 18, 4, 720);
     			attr_dev(div8, "wire:loading", "");
-    			attr_dev(div8, "class", div8_class_value = "" + ((/*errorOpen*/ ctx[0] ? "" : "hidden") + " fixed top-0 left-0 right-0 bottom-0 w-full h-screen overflow-hidden flex flex-col items-center justify-center"));
+    			attr_dev(div8, "class", div8_class_value = "" + ((/*errorOpen*/ ctx[0] ? '' : 'hidden') + " fixed top-0 left-0 right-0 bottom-0 w-full h-screen overflow-hidden flex flex-col items-center justify-center"));
     			add_location(div8, file$2, 14, 0, 443);
     		},
     		l: function claim(nodes) {
@@ -2239,7 +2152,7 @@ var app = (function () {
     		p: function update(ctx, [dirty]) {
     			if (dirty & /*errMsg*/ 2) set_data_dev(t6, /*errMsg*/ ctx[1]);
 
-    			if (dirty & /*errorOpen*/ 1 && div8_class_value !== (div8_class_value = "" + ((/*errorOpen*/ ctx[0] ? "" : "hidden") + " fixed top-0 left-0 right-0 bottom-0 w-full h-screen overflow-hidden flex flex-col items-center justify-center"))) {
+    			if (dirty & /*errorOpen*/ 1 && div8_class_value !== (div8_class_value = "" + ((/*errorOpen*/ ctx[0] ? '' : 'hidden') + " fixed top-0 left-0 right-0 bottom-0 w-full h-screen overflow-hidden flex flex-col items-center justify-center"))) {
     				attr_dev(div8, "class", div8_class_value);
     			}
     		},
@@ -2265,7 +2178,7 @@ var app = (function () {
 
     function instance$3($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
-    	validate_slots("ErrorModal", slots, []);
+    	validate_slots('ErrorModal', slots, []);
     	let errorOpen, errMsg;
 
     	isErrorOpen.subscribe(val => {
@@ -2278,17 +2191,15 @@ var app = (function () {
 
     	const urlParams = new URLSearchParams(window.location.search);
 
-    	if (urlParams.has("error")) {
+    	if (urlParams.has('error')) {
     		urlParams.has("errorMsg")
     		? showError(urlParams.get("errorMsg"))
     		: showError();
     	}
-
-    	
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<ErrorModal> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console.warn(`<ErrorModal> was created with unknown prop '${key}'`);
     	});
 
     	$$self.$capture_state = () => ({
@@ -2302,8 +2213,8 @@ var app = (function () {
     	});
 
     	$$self.$inject_state = $$props => {
-    		if ("errorOpen" in $$props) $$invalidate(0, errorOpen = $$props.errorOpen);
-    		if ("errMsg" in $$props) $$invalidate(1, errMsg = $$props.errMsg);
+    		if ('errorOpen' in $$props) $$invalidate(0, errorOpen = $$props.errorOpen);
+    		if ('errMsg' in $$props) $$invalidate(1, errMsg = $$props.errMsg);
     	};
 
     	if ($$props && "$$inject" in $$props) {
@@ -2327,7 +2238,7 @@ var app = (function () {
     	}
     }
 
-    /* src/components/productGrid/successModal.svelte generated by Svelte v3.38.3 */
+    /* src/components/productGrid/successModal.svelte generated by Svelte v3.48.0 */
 
     const { console: console_1$1 } = globals;
     const file$1 = "src/components/productGrid/successModal.svelte";
@@ -2403,7 +2314,7 @@ var app = (function () {
     			add_location(div0, file$1, 16, 4, 520);
     			attr_dev(h1, "class", "text-lg text-center font-bold");
     			add_location(h1, file$1, 20, 8, 794);
-    			if (img.src !== (img_src_value = "/images/hillcroft_lacrosse_club_logo.png")) attr_dev(img, "src", img_src_value);
+    			if (!src_url_equal(img.src, img_src_value = "/images/hillcroft_lacrosse_club_logo.png")) attr_dev(img, "src", img_src_value);
     			attr_dev(img, "alt", "Hillcroft Lacrosse Club Logo");
     			attr_dev(img, "class", "object-none object-center w-auto mx-auto py-5");
     			add_location(img, file$1, 21, 8, 879);
@@ -2445,7 +2356,7 @@ var app = (function () {
     			attr_dev(div7, "class", "bg-gray-100 flex opacity-100 flex-col justify-center sm:py-8 rounded-lg z-20");
     			add_location(div7, file$1, 18, 4, 627);
     			attr_dev(div8, "wire:loading", "");
-    			attr_dev(div8, "class", div8_class_value = "" + ((/*successOpen*/ ctx[0] ? "" : "hidden") + " fixed top-0 left-0 right-0 bottom-0 w-full h-screen overflow-hidden flex flex-col items-center justify-center"));
+    			attr_dev(div8, "class", div8_class_value = "" + ((/*successOpen*/ ctx[0] ? '' : 'hidden') + " fixed top-0 left-0 right-0 bottom-0 w-full h-screen overflow-hidden flex flex-col items-center justify-center"));
     			add_location(div8, file$1, 14, 0, 348);
     		},
     		l: function claim(nodes) {
@@ -2486,7 +2397,7 @@ var app = (function () {
     			}
     		},
     		p: function update(ctx, [dirty]) {
-    			if (dirty & /*successOpen*/ 1 && div8_class_value !== (div8_class_value = "" + ((/*successOpen*/ ctx[0] ? "" : "hidden") + " fixed top-0 left-0 right-0 bottom-0 w-full h-screen overflow-hidden flex flex-col items-center justify-center"))) {
+    			if (dirty & /*successOpen*/ 1 && div8_class_value !== (div8_class_value = "" + ((/*successOpen*/ ctx[0] ? '' : 'hidden') + " fixed top-0 left-0 right-0 bottom-0 w-full h-screen overflow-hidden flex flex-col items-center justify-center"))) {
     				attr_dev(div8, "class", div8_class_value);
     			}
     		},
@@ -2512,7 +2423,7 @@ var app = (function () {
 
     function instance$2($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
-    	validate_slots("SuccessModal", slots, []);
+    	validate_slots('SuccessModal', slots, []);
     	let successOpen;
 
     	isSuccessOpen.subscribe(val => {
@@ -2521,16 +2432,14 @@ var app = (function () {
 
     	const urlParams = new URLSearchParams(window.location.search);
 
-    	if (urlParams.has("success")) {
-    		console.log("has success");
+    	if (urlParams.has('success')) {
+    		console.log('has success');
     		showSuccess();
     	}
-
-    	
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1$1.warn(`<SuccessModal> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$1.warn(`<SuccessModal> was created with unknown prop '${key}'`);
     	});
 
     	$$self.$capture_state = () => ({
@@ -2542,7 +2451,7 @@ var app = (function () {
     	});
 
     	$$self.$inject_state = $$props => {
-    		if ("successOpen" in $$props) $$invalidate(0, successOpen = $$props.successOpen);
+    		if ('successOpen' in $$props) $$invalidate(0, successOpen = $$props.successOpen);
     	};
 
     	if ($$props && "$$inject" in $$props) {
@@ -2566,7 +2475,7 @@ var app = (function () {
     	}
     }
 
-    /* src/components/productGrid/ProductGrid.svelte generated by Svelte v3.38.3 */
+    /* src/components/productGrid/ProductGrid.svelte generated by Svelte v3.48.0 */
 
     const { console: console_1 } = globals;
     const file = "src/components/productGrid/ProductGrid.svelte";
@@ -2914,7 +2823,7 @@ var app = (function () {
 
     function instance$1($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
-    	validate_slots("ProductGrid", slots, []);
+    	validate_slots('ProductGrid', slots, []);
     	let promise = Promise.resolve([]);
 
     	onMount(() => {
@@ -2924,7 +2833,7 @@ var app = (function () {
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console_1.warn(`<ProductGrid> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1.warn(`<ProductGrid> was created with unknown prop '${key}'`);
     	});
 
     	$$self.$capture_state = () => ({
@@ -2938,7 +2847,7 @@ var app = (function () {
     	});
 
     	$$self.$inject_state = $$props => {
-    		if ("promise" in $$props) $$invalidate(0, promise = $$props.promise);
+    		if ('promise' in $$props) $$invalidate(0, promise = $$props.promise);
     	};
 
     	if ($$props && "$$inject" in $$props) {
@@ -2962,7 +2871,7 @@ var app = (function () {
     	}
     }
 
-    /* src/App.svelte generated by Svelte v3.38.3 */
+    /* src/App.svelte generated by Svelte v3.48.0 */
 
     const { document: document_1 } = globals;
 
@@ -3037,11 +2946,11 @@ var app = (function () {
 
     function instance($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
-    	validate_slots("App", slots, []);
+    	validate_slots('App', slots, []);
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== "$$") console.warn(`<App> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console.warn(`<App> was created with unknown prop '${key}'`);
     	});
 
     	$$self.$capture_state = () => ({ Header, Footer, ProductGrid });
@@ -3070,5 +2979,5 @@ var app = (function () {
 
     return app;
 
-}());
+})();
 //# sourceMappingURL=bundle.js.map
