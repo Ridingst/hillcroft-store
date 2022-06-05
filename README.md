@@ -22,3 +22,8 @@ vercel dev
 ```
 
 Navigate to [localhost:3000](http://localhost:3000). You should see your app running. Edit a component file in `src`, save it, and reload the page to see your changes.
+
+
+## Notes 
+
+There's sometimes an issue that means the `vercel dev` command doesn't work on mac. To fix this removing the `::1 localhost` line from `/etc/hosts` file should fix the issue.
