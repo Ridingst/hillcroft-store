@@ -12,7 +12,7 @@ async function getInvoices(){
             created: {
                 gte: Math.floor(new Date().getTime() / 1000) - (365*24*60*60)
             }
-        }).autoPagingToArray({limit: 5000});
+        }).autoPagingToArray({limit: 1000});
         
         return(allInvoices)
     } catch(err){
