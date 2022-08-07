@@ -78,9 +78,11 @@ export async function getCheckoutProduct(event){
 
 export async function incrementPayment(event){
     return new Promise((resolve, reject) => {
-        let subscription = event.data.objext.lines.data[0]
+        let subscription = event.data.object.lines.data[0]
         let mensMonthly = process.env.MENSMONTHLY
         let womensMonthly = process.env.MENSMONTHLY
+
+        //console.debug(subscription)
 
         if([mensMonthly, womensMonthly].includes(subscription.plan.id)){
             // Then we have the right subscription
@@ -128,7 +130,8 @@ export async function checkStripeEvent(event){
               // Continue to provision the subscription as payments continue to be made.
               // Store the status in database and check when a user accesses your service.
               // This approach helps you avoid hitting rate limits.
-              resolve(['INSTALLMENT', event, product]);
+              console.log('INSTALLMENT Identified')
+              resolve(['INSTALLMENT', event]);
               break;
             case 'invoice.payment_failed':
               // The payment failed or the customer does not have a valid payment method.
