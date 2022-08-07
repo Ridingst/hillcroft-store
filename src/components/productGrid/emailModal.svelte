@@ -36,6 +36,7 @@
       .then((data) => {
         if(data.status !== 200) {
           // I think this error should bubble up and get caught by the catch statement...should be tested
+          console.error(data)
           reject('Error creating stripe session. Please try again')
         } else {
           resolve(data.json())

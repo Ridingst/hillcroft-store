@@ -11,6 +11,8 @@ module.exports = (req, res) => {
   console.debug("/createCheckout")
   const { body } = req;
 
+  let cust
+
 
   let customerObj = {
     email: req.body.email,
@@ -36,10 +38,13 @@ module.exports = (req, res) => {
       return updateOrCreateHubspotUser(customer)
     })
     .then(hubspotUser => {
-      customerObj.hubspotid = hubspotUser.response.body.id;
+      //customerObj.hubspotid = hubspotUser.response.body.id;
       return createStripeSession(req.body.product, req.body.frequency, customerObj.stripeid, customerObj.email)
     })
     .then(session => res.send({status: "Ok", sessionUrl: session.url}))
+    .then(() => {
+      return updateOrCreateHubspotUser(hubspot, customerObj)
+    })
     .catch(err => {
       console.error(err)
       res.status(400)

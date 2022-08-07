@@ -25,7 +25,7 @@ module.exports = (req, res) => {
                 res.status(400)
                 res.send({
                     status: "Error",
-                    message: "Error validating webhook."
+                    message: "Error incrementing webhook."
                 })
             })
         }
