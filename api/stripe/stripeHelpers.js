@@ -76,6 +76,40 @@ export async function getCheckoutProduct(event){
     })
 }
 
+export async function incrementPayment(event){
+    return new Promise((resolve, reject) => {
+        let subscription = event.data.objext.lines.data[0]
+        let mensMonthly = process.env.MENSMONTHLY
+        let womensMonthly = process.env.MENSMONTHLY
+
+        if([mensMonthly, womensMonthly].includes(subscription.plan.id)){
+            // Then we have the right subscription
+            let count = 1
+            if(subscription.metadata && subscription.metadata.installments_paid && subscription.metadata.installments_paid != 0){
+                count = subscription.metadata.installments_paid + 1
+            }
+
+            // now we update the object
+            stripe.subscriptions.update(subscription.id,
+            { metadata: {installments_paid: count} })
+            .then(() =>{
+                if(count >=6){
+                    return stripe.subscriptions.del(subscription.id)
+                } else {
+                    return
+                }
+            })
+            .then(()=>{
+                resolve()
+            })
+            .catch(err => reject(err))
+        } else {
+            resolve()
+        }
+    })
+
+}
+
 export async function checkStripeEvent(event){
     return new Promise((resolve, reject) => {
         switch (event.type) {
@@ -94,12 +128,15 @@ export async function checkStripeEvent(event){
               // Continue to provision the subscription as payments continue to be made.
               // Store the status in database and check when a user accesses your service.
               // This approach helps you avoid hitting rate limits.
-              resolve([]);
+              resolve(['INSTALLMENT', event, product]);
               break;
             case 'invoice.payment_failed':
               // The payment failed or the customer does not have a valid payment method.
               // The subscription becomes past_due. Notify your customer and send them to the
               // customer portal to update their payment information.
+              console.log("invoice.payment_failed")
+              console.log(event)
+              console.log(product)
               resolve([]);
               break;
             default:
