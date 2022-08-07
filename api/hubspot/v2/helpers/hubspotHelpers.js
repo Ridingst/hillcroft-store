@@ -15,10 +15,13 @@ import { retrieveValidToken } from './tokenManagement.js'
 */
 
 
-export async function updateOrCreateHubspotUser(hubspotClient, customer){
+export async function updateOrCreateHubspotUser(customer){
     return new Promise((resolve, reject) => {
         console.debug('updateOrCreateHubspotUser')
-        hubspotClient.crm.contacts.basicApi.update(customer.email,  {properties: customer}, "email")
+        getHubspotClient()
+        .then(hubspotClient => {
+            hubspotClient.crm.contacts.basicApi.update(customer.email,  {properties: customer}, "email")
+        })
         .then(response => {console.debug('updated existing user'); resolve(response)})
         .catch(err => {
             if(err.response.statusCode === 404){
